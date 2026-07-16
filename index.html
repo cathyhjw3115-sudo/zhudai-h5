@@ -279,9 +279,10 @@
 
 <script>
 // ============ 问卷配置 ============
-// 上报地址：调用你自己的代理（密钥仅存于代理服务端环境变量，绝不下发到前端）
-// 部署代理后，把下面这行替换成你的 Worker / 云函数地址即可（含 "<" 的占位符会被忽略）
-const REPORT_ENDPOINT = 'https://<你的代理子域>.workers.dev/api/lead';
+// 上报地址：当前为「前端直连企业微信群机器人」
+// 注：key 直接写在前端源码中（仅适合内部/临时使用）。正式投放前建议切回「代理隐藏 key」
+// 方案——把下面这行替换成你的 Worker / 云函数地址，并把 key 移入代理环境变量（见 proxy/ 与部署说明）。
+const REPORT_ENDPOINT = 'https://qyapi.weixin.qq.com/cgi-bin/webhook/send?key=d20664ee-f0cf-4d77-8da5-56926fb5cd9b';
 
 const questions = {
   // 基本信息（common）
@@ -610,15 +611,51 @@ function buildRecord(matched) {
   };
 }
 
-// 线索上报：控制台 + 本地留存 + （可选）后端/企微机器人 + 结果页回执
-// 上报线索：仅把原始线索 POST 给你的代理；密钥与企微 markdown 格式转换都在代理服务端完成
-// 前端不打印、不落盘，客户浏览器零痕迹
+// 线索上报：直接推送到企业微信群机器人（key 写在前端，仅适合内部/临时使用）
+// 前端不打印、不写 localStorage，客户浏览器零留痕；但 key 暴露在源码中。
+// 正式投放前建议改回「代理隐藏 key」方案（见 proxy/ 与部署说明_微信H5.md）。
+function buildWecomPayload(rec) {
+  const lines = [];
+  lines.push('## 🔔 新线索提交');
+  lines.push(`**姓名**：${rec.name || '-'}`);
+  lines.push(`**联系方式**：${rec.contact || '-'}`);
+  lines.push(`**提交时间**：${rec.submitTime || '-'}`);
+  lines.push(`**身份类型**：${rec.identity || '-'}`);
+  lines.push(`**页面来源**：${rec.page || '-'}`);
+  lines.push('');
+  lines.push('### 📋 答题记录');
+  const answers = rec.answers || {};
+  const qids = Object.keys(answers);
+  if (qids.length === 0) {
+    lines.push('暂无答题记录');
+  } else {
+    qids.forEach((qid, i) => {
+      const a = answers[qid];
+      lines.push(`${i + 1}. ${a.q || qid}：${a.label || a.value || '-'}`);
+    });
+  }
+  lines.push('');
+  lines.push('### 🏆 匹配产品');
+  const matched = rec.matched || [];
+  if (matched.length === 0) {
+    lines.push('暂无匹配产品');
+  } else {
+    matched.forEach((m, i) => {
+      lines.push(`${i + 1}. ${m.name}（${m.tag || '-'}）`);
+    });
+  }
+  lines.push('');
+  lines.push('---');
+  lines.push('> 来自 助贷智能问答匹配 H5');
+  return { msgtype: 'markdown', markdown: { content: lines.join('\n') } };
+}
+
 function reportLead(record) {
-  if (REPORT_ENDPOINT && REPORT_ENDPOINT.indexOf('<') === -1) {
+  if (REPORT_ENDPOINT) {
     fetch(REPORT_ENDPOINT, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(record)
+      body: JSON.stringify(buildWecomPayload(record))
     }).catch(() => {});
   }
 }
