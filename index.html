@@ -108,13 +108,10 @@
   .btn-primary:active { opacity: 0.85; }
   .btn-primary:disabled { background: #c8c8c8; cursor: not-allowed; }
   .btn-back { flex: 0 0 80px; background: #f0f2f5; color: #666; }
-  .welcome { text-align: center; padding-top: 80px; }
-  .welcome-emoji { font-size: 64px; margin-bottom: 20px; }
-  .welcome h1 { font-size: 26px; font-weight: 800; color: #1a1a1a; margin-bottom: 14px; line-height: 1.4; }
-  .welcome p { font-size: 15px; color: #666; line-height: 1.6; margin-bottom: 8px; }
-  .welcome .tags { display: flex; justify-content: center; gap: 8px; margin: 28px 0; flex-wrap: wrap; }
-  .welcome .tag { background: #e8f5e9; color: #2e7d32; font-size: 13px; padding: 6px 14px; border-radius: 20px; font-weight: 600; }
-  .welcome .btn-primary { width: 100%; margin-top: 20px; }
+  .lead-step { padding-top: 24px; text-align: center; }
+  .lead-step-title { font-size: 22px; font-weight: 700; color: #1a1a1a; margin-bottom: 8px; line-height: 1.4; }
+  .lead-step-desc { font-size: 14px; color: #666; line-height: 1.6; margin-bottom: 28px; }
+  .lead-step .btn-primary { width: 100%; margin-top: 20px; }
   .agreement { font-size: 12px; color: #999; margin-top: 18px; line-height: 1.5; }
   .decl-mini { background: #fff8e1; border: 1px solid #ffe082; border-radius: 12px; margin: 18px 0 14px; overflow: hidden; }
   .decl-mini-head { display: flex; align-items: center; justify-content: space-between; padding: 11px 14px; font-size: 13px; font-weight: 600; color: #e65100; cursor: pointer; }
@@ -188,15 +185,20 @@
   <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
 
   <div class="page active" id="page-welcome">
-    <div class="welcome">
-      <div class="welcome-emoji">💰</div>
-      <h1>测一测<br>哪种贷款方案适合你</h1>
-      <p>回答几个问题，AI 帮你匹配方向</p>
-      <div class="tags">
-        <span class="tag">📋 上班族</span>
-        <span class="tag">💼 做生意</span>
-        <span class="tag">🏠 有房有车</span>
-        <span class="tag">📄 有保单</span>
+    <div class="lead-step">
+      <div class="lead-step-title">填写信息，开始匹配</div>
+      <div class="lead-step-desc">回答 3～5 个问题，系统将根据你的情况匹配适合的贷款方向</div>
+
+      <div class="lead-form">
+        <div class="lead-field">
+          <label>您的称呼 *</label>
+          <input type="text" id="leadName" placeholder="如：王先生" oninput="toggleStart()">
+        </div>
+        <div class="lead-field">
+          <label>联系方式 *（手机号 / 微信号）</label>
+          <input type="text" id="leadContact" placeholder="方便顾问联系您" oninput="toggleStart()">
+        </div>
+        <div class="lead-err" id="leadErr">请先填写称呼和联系方式，再开始测试</div>
       </div>
 
       <div class="decl-mini">
@@ -211,29 +213,19 @@
         </div>
       </div>
 
-      <div class="lead-form">
-        <div class="lead-field">
-          <label>您的称呼 *</label>
-          <input type="text" id="leadName" placeholder="如：王先生" oninput="toggleStart()">
-        </div>
-        <div class="lead-field">
-          <label>联系方式 *（手机号 / 微信号）</label>
-          <input type="text" id="leadContact" placeholder="方便顾问联系您" oninput="toggleStart()">
-        </div>
-        <div class="lead-err" id="leadErr">请先填写称呼和联系方式，再开始测试</div>
-      </div>
-
       <label class="agree-check">
         <input type="checkbox" id="agreeChk" onchange="toggleStart()">
         <span>我已阅读并同意上述《重要声明》</span>
       </label>
 
-      <button class="btn btn-primary" id="startBtn" onclick="startTest()" disabled>开始测试（约1分钟）</button>
+      <button class="btn btn-primary" id="startBtn" onclick="startTest()" disabled>开始测试</button>
       <div class="agreement">我们仅用于为你匹配方案，不会泄露信息</div>
     </div>
   </div>
 
-  <div id="questionContainer"></div>
+  <div class="page" id="page-question">
+    <div id="questionContainer"></div>
+  </div>
 
   <div class="page" id="page-loading">
     <div class="loading">
@@ -430,6 +422,8 @@ function startTest() {
   currentIndex = 0;
   currentFlow = [...flowCommon];
   showQuestion();
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.getElementById('page-question').classList.add('active');
   document.getElementById('navArea').style.display = 'flex';
 }
 
@@ -453,7 +447,7 @@ function showQuestion() {
   });
 
   container.innerHTML = `
-    <div class="page active" id="currentQ">
+    <div id="currentQ">
       <div class="step-label">第 ${currentIndex+1} / ${currentFlow.length} 题</div>
       <div class="question">${q.q}</div>
       <div class="options">${optionsHtml}</div>
