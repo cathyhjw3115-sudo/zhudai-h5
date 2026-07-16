@@ -279,9 +279,9 @@
 
 <script>
 // ============ 问卷配置 ============
-// 上报地址：留空 = 仅本地记录 + 控制台日志 + 结果页可复制/下载
-// 可填你的后端接口，或企业微信群机器人 webhook，提交即 POST 这份线索 JSON
-const REPORT_ENDPOINT = '';
+// 上报地址：留空 = 仅本地记录 + 控制台日志
+// 已接入企业微信群机器人 webhook：提交即把线索以 markdown 卡片推送到你的企微群
+const REPORT_ENDPOINT = 'https://qyapi.weixin.qq.com/cgi-bin/webhook/send?key=d20664ee-f0cf-4d77-8da5-56926fb5cd9b';
 
 const questions = {
   // 基本信息（common）
@@ -611,6 +611,27 @@ function buildRecord(matched) {
 }
 
 // 线索上报：控制台 + 本地留存 + （可选）后端/企微机器人 + 结果页回执
+// 把线索转成企业微信群机器人支持的 markdown 消息（直接发原始 JSON 会被拒）
+function buildWecomPayload(rec) {
+  const idLabel = rec.identity === 'employed' ? '上班族'
+                : rec.identity === 'business' ? '做生意'
+                : (rec.identity || '未知');
+  const lines = [];
+  lines.push('## 📥 新贷款线索');
+  lines.push(`**称呼**：<font color="warning">${rec.name || '未填'}</font>`);
+  lines.push(`**联系方式**：<font color="warning">${rec.contact || '未填'}</font>`);
+  lines.push(`**身份**：${idLabel}`);
+  lines.push(`**提交时间**：${rec.submitTime}`);
+  lines.push('');
+  lines.push('**▍答题记录**');
+  Object.values(rec.answers).forEach(a => {
+    lines.push(`> ${a.q}：**${a.label}**`);
+  });
+  lines.push('');
+  lines.push(`**🎯 匹配产品**：${rec.matched.map(m => m.name).join('、')}`);
+  return { msgtype: 'markdown', markdown: { content: lines.join('\n') } };
+}
+
 function reportLead(record) {
   console.log('[线索提交]', JSON.stringify(record, null, 2));
   try {
@@ -619,10 +640,14 @@ function reportLead(record) {
     localStorage.setItem('zhudai_leads', JSON.stringify(all));
   } catch (e) {}
   if (REPORT_ENDPOINT) {
+    // 企业微信群机器人 webhook：转成其消息格式；其他后端：发原始 JSON
+    const body = /qyapi\.weixin\.qq\.com\/cgi-bin\/webhook\/send/.test(REPORT_ENDPOINT)
+      ? buildWecomPayload(record)
+      : record;
     fetch(REPORT_ENDPOINT, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(record)
+      body: JSON.stringify(body)
     }).catch(err => console.warn('线索上报失败', err));
   }
 }
