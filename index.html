@@ -181,13 +181,6 @@
   .wx-guide .arrow .txt { font-size: 15px; margin-top: 6px; max-width: 210px; margin-left: auto; line-height: 1.5; font-weight: 600; }
   .wx-guide .hint { position: absolute; bottom: 56px; left: 0; right: 0; text-align: center; color: #fff; font-size: 14px; opacity: 0.9; }
   .btn-share { background: #fff; color: #e65100; border: 1.5px solid #ffb74d; margin-top: 14px; width: 100%; padding: 13px; border-radius: 12px; font-size: 15px; font-weight: 600; cursor: pointer; }
-  .data-box { background: #f6f8fa; border: 1px dashed #cfd8dc; border-radius: 12px; padding: 14px; margin-top: 16px; text-align: left; }
-  .data-box .data-title { font-size: 13px; font-weight: 700; color: #333; margin-bottom: 8px; }
-  .data-box pre { font-size: 11px; color: #555; white-space: pre-wrap; word-break: break-all; max-height: 200px; overflow: auto; background: #fff; padding: 10px; border-radius: 8px; line-height: 1.5; }
-  .data-actions { display: flex; gap: 10px; margin-top: 10px; }
-  .data-actions button { flex: 1; padding: 11px; border-radius: 10px; font-size: 14px; font-weight: 600; border: none; cursor: pointer; }
-  .btn-copy { background: #2e7d32; color: #fff; }
-  .btn-down { background: #e3f2e4; color: #2e7d32; }
 </style>
 </head>
 <body>
@@ -266,15 +259,6 @@
         <button class="btn-share" onclick="showWxGuide()">📤 转发给好友 / 朋友圈</button>
       </div>
     </div>
-    <div class="data-box" id="leadDataBox" style="display:none;">
-      <div class="data-title">📋 我的填写数据（可复制 / 留存）</div>
-      <pre></pre>
-      <div class="data-actions">
-        <button class="btn-copy" onclick="copyLeadData()">复制数据</button>
-        <button class="btn-down" onclick="downloadLeadData()">下载JSON</button>
-      </div>
-    </div>
-
     <div class="disclaimer">本方案为系统自动生成的参考内容，不代表官方审核结果，不可作为正式申报、审批材料使用。您因参考本方案作出的任何决策及相关后果，均由您自行承担，与本平台无关。</div>
     <div class="restart"><button class="restart-btn" onclick="restart()">重新测试</button></div>
   </div>
@@ -641,32 +625,6 @@ function reportLead(record) {
       body: JSON.stringify(record)
     }).catch(err => console.warn('线索上报失败', err));
   }
-  const box = document.getElementById('leadDataBox');
-  if (box) {
-    box.querySelector('pre').textContent = JSON.stringify(record, null, 2);
-    box.style.display = 'block';
-  }
-}
-
-function copyLeadData() {
-  const box = document.getElementById('leadDataBox');
-  const txt = box.querySelector('pre').textContent;
-  if (navigator.clipboard && navigator.clipboard.writeText) {
-    navigator.clipboard.writeText(txt).then(() => alert('已复制填写数据到剪贴板')).catch(() => alert('复制失败，请手动长按选择'));
-  } else {
-    alert('当前环境不支持自动复制，请手动长按选择文本');
-  }
-}
-
-function downloadLeadData() {
-  const box = document.getElementById('leadDataBox');
-  const txt = box.querySelector('pre').textContent;
-  const blob = new Blob([txt], { type: 'application/json' });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  const fname = (lead ? lead.name : 'lead') + '_' + Date.now() + '.json';
-  a.href = url; a.download = fname; a.click();
-  URL.revokeObjectURL(url);
 }
 
 function renderResult(top3) {
